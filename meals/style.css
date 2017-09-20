@@ -1,0 +1,32 @@
+body {
+	background-color: lightblue;
+	font-family: fantasy;
+}
+
+h1 {
+	font-size: small;
+}
+
+#meals {
+	display: block;
+}
+
+#meals label {
+	color: #777;
+}
+
+.meal img {
+	width: 400px;
+}
+
+@media screen and (max-width: 100px) {
+    
+    html, body {
+        font-size: medium;
+    }
+
+	.meal img {
+		color: blue;
+	}
+	
+}

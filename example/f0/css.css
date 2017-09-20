@@ -1,0 +1,34 @@
+body {
+    background-color: #852020
+	color: red;
+}
+
+#p {
+	color: blue;
+}
+
+.class {
+	color: red;
+	color: blue;
+}
+
+
+@media screen and (max-width: 100px) {
+    
+	
+	
+    html, body {
+        font-size: medium;
+    }
+
+	
+	.class {
+		color: blue;
+	}
+
+
+	#id {
+		color: green;
+	}
+
+}

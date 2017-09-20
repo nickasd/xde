@@ -1,0 +1,57 @@
+{
+	"name": "xde",
+	"version": "1.0.0",
+	"description": "A cross-device IDE that runs in the browser.",
+	"main": "server.js",
+	"scripts": {
+		"build": "cp -r node_modules/font-awesome/fonts client/dist && watchify client/client.js -o client/dist/js/bundle.js",
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"start": "node server.js"
+	},
+	"author": "Nicolas Kick",
+	"license": "MIT",
+	"dependencies": {
+		"acorn": "^5.1.2",
+		"bootstrap": "^3.3.7",
+		"browser-sync": "^2.18.13",
+		"circular-json": "^0.3.3",
+		"codemirror": "^5.30.0",
+		"css-parse": "^2.0.0",
+		"csslint": "^1.0.5",
+		"dom-inspector": "https://github.com/nickasd/dom-inspector",
+		"express": "^4.15.4",
+		"font-awesome": "^4.7.0",
+		"htmlhint": "^0.9.13",
+		"javascript-console": "git+https://github.com/nickasd/javascript-console.git",
+		"jquery": "^3.2.1",
+		"jquery-ui-dist": "^1.12.1",
+		"jshint": "^2.9.4",
+		"parse5": "^3.0.2",
+		"reconnecting-websocket": "^3.2.1",
+		"sharedb": "^1.0.0-beta.7",
+		"sharedb-codemirror": "https://github.com/nickasd/sharedb-codemirror",
+		"simple-hotkeys": "^1.0.3",
+		"spectrum-colorpicker": "^1.8.0",
+		"split-pane": "^0.5.1",
+		"stacktrace-js": "^2.0.0",
+		"tern": "^0.21.0",
+		"uuid": "^3.0.1",
+		"walk": "^2.3.9",
+		"websocket-json-stream": "^0.0.3",
+		"ws": "^3.2.0"
+	},
+	"devDependencies": {
+		"browserify": "^14.3.0",
+		"browserify-css": "^0.12.0",
+		"watchify": "^3.9.0"
+	},
+	"browserify": {
+		"transform": [
+			"browserify-css"
+		]
+	},
+	"browserify-css": {
+		"minify": true,
+		"rebaseUrls": false
+	}
+}

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<script src="jquery/dist/jquery.min.js"></script>
+	<script src="jquery-ui-dist/jquery-ui.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="jquery-ui-dist/jquery-ui.min.css">
+	<script src="csslint/dist/csslint.js"></script>
+	<script src="jshint/dist/jshint.js"></script>
+	<script src="htmlhint/lib/htmlhint.js"></script>
+	<script src="cssutilities/CSSUtilities.js"></script>
+	<script src="spectrum-colorpicker/spectrum.js"></script>
+	<link rel="stylesheet" href="spectrum-colorpicker/spectrum.css" />
+	<script src="dist/js/bundle.js"></script>
+	<title>XDE</title>
+</head>
+<body>
+<div id="topbar">
+<div>
+	<a href="#" class="fa fa-eye" id="preview-button-top"></a>
+	<a href="#" class="fa fa-terminal" id="console-button-top"></a>
+	<a href="#" class="fa fa-search" id="search-button-top"></a>
+	<a href="#" class="fa fa-bookmark" id="bookmarks-button"></a>
+	<a href="#" class="fa fa-list-ul" id="outline-button"></a>
+	<a href="#" class="fa fa-cog" id="settings-button-top"></a>
+</div>
+</div>
+<div class="split-pane fixed-left">
+	<div class="split-pane-component" id="sidebar">
+		<div id="statusbar">
+			<span>
+				<span class="fa fa-save" id="save-button"></span>
+				<span class="fa fa-play-circle" id="play-button"></span>
+				<span class="fa fa-search" id="quick-search-button"></span>
+			</span>
+			<span class="right">
+				<span class="fa fa-cog" id="settings-button"></span>
+				<span class="fa fa-question-circle" id="help-button"></span>
+				<span class="fa fa-spinner fa-spin" id="status"></span>
+			</span>
+		</div>
+		<div class="separator"></div>
+		<div id="clients"><a href="#" class="disabled">No connected clients.</a></div>
+		<div class="separator"></div>
+		<a href="#" id="preview-button"><span class="icon fa fa-eye"></span>Preview</a>
+		<a href="#" id="console-button"><span class="icon fa fa-terminal"></span>Console</a>
+		<a href="#" id="search-button"><span class="icon fa fa-search"></span>Search</a>
+		<div class="separator"></div>
+		<a href="#" class="disabled"><span class="icon fa fa-hashtag"></span><span id="project-title"></span></a>
+		<div id="files"></div>
+	</div>
+	<div id="sidebar-divider" class="split-pane-divider"></div>
+	<div id="main" class="split-pane-component">
+		<div id="welcome"><p>XDE</p></div>
+	</div>
+	<div id="views" style="display:none">
+		<div id="editor"></div>
+		<div id="imageviewer"></div>
+		<iframe id="preview" src="about:blank"></iframe>
+		<div id="console"></div>
+		<div id="search">
+			<div class="input">
+				<div id="mode-selector" class="btn-group">
+					<a href="#" id="mode-search" class="btn btn-primary active">Search</a>
+					<a href="#" id="mode-replace" class="btn btn-primary">Replace</a>
+				</div>
+				<div class="input-group"><span class="input-group-addon"><span class="fa fa-search"></span></span><input id="search-input" type="search" class="form-control" placeholder="Search in project" /></div>
+				<div class="input-group"><span class="input-group-addon"><span class="fa fa-pencil"></span></span><input id="replace-input" type="search" class="form-control" placeholder="Replace in project" /></div>
+			</div>
+		</div>
+		<div id="bookmarks">
+			<input type="search" class="search" placeholder="Find files" />
+			<div class="history"><p id="empty-history" class="center info"><span class="fa fa-info-circle"></span>The history is empty.</p></div>
+		</div>
+		<div id="outline">
+			<div class="elements"><p id="empty-outline" class="center info"><span class="fa fa-info-circle"></span>The outline is empty.</p></div>
+		</div>
+		<div id="settings">
+			<h2>Settings</h2>
+			<div class="input-group"><label for="name" class="input-group-addon">Name:</label><input type="text" class="form-control" id="name-setting" /></div>
+			<div id="split-setting" class="input-group"><span class="input-group-addon">Split:</span><span class="input-group-btn left"><button id="no-split-setting" class="btn btn-primary active" data-split="no"><span class="fa fa-arrows"></span></button><button id="v-split-setting" class="btn btn-primary" data-split="v"><span class="fa fa-arrows-h"></span></button><button id="h-split-setting" class="btn btn-primary" data-split="h"><span class="fa fa-arrows-v"></span></button></span></div>
+			<div class="checkbox"><label><input id="fullscreen-setting" type="checkbox" value="">Fullscreen</label></div>
+		</div>
+		<div id="help">
+			<h2>Help</h2>
+			<dl>
+				<dt><span class="fa fa-save"></span></dt><dd>Save all the modified documents to disk on the server. Clients can safely reconnect to the server without losing any change, but shutting down the server will discard all unsaved changes.</dd>
+				<dt><span class="fa fa-play-circle"></span></dt><dd>Run the last local or remote preview again. If no preview has been run yet, the default entry point <code>index.html</code> is run locally.</dd>
+				<dt><span class="fa fa-search"></span></dt><dd>Run a project-wide search and display the results on the last selected device. If no search has been run yet, the results are displayed on the first remote device.</dd>
+				<dt><span class="fa fa-eye"></span> <span class="keyword">Preview</span></dt><dd>The first time the preview button is manually selected on a client, the default entry point <code>index.html</code> is run locally. Any other file can be previewed locally by selecting Preview from its context menu. A remote preview can be run by selecting Quick Preview from the context menu of a client. Dragging the preview button from the sidebar to a client simply makes the preview active, without running it again.</dd>
+				<dt><span class="fa fa-terminal"></span> <span class="keyword">Console</span></dt><dd>The console contains all the logs generated from the previews on all the clients. Selecting a file reference opens the editor on the first non-touch device. JavaScript code entered through the text field at the bottom is evaluated on all the clients where the preview is active or the last preview was run locally.</dd>
+				<dt><span class="fa fa-search"></span> <span class="keyword">Search</span></dt><dd>Do a project-wide search and display the results locally.</dd>
+				<dt><span class="fa fa-hashtag"></span> <span class="keyword">Editor</span></dt><dd>Files can be opened in the editor locally by selecting them in the sidebar and remotely by dragging them to the desired client.</dd>
+			</dl>
+		</div>
+	</div>
+</div>
+</body>
+</html>
