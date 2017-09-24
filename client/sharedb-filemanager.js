@@ -21,7 +21,15 @@ class ShareDBFileManager extends EventEmitter {
 			this.log('ShareDB: ready', filesQuery.results);
 			var rootFile = this.rootFile;
 			rootFile.children.splice(0, rootFile.children.length);
+			var view = rootFile.view;
+			if (view) {
+				delete rootFile.view;
+			}
 			this.ingestUpdates({insertedDocs: filesQuery.results});
+			if (view) {
+				rootFile.view = view;
+				this.view();
+			}
 			this.emit('ready');
 		});
 
@@ -39,7 +47,7 @@ class ShareDBFileManager extends EventEmitter {
 			this.log('ShareDB: error', error);
 			this.emit('error', error);
 		});
-		
+
 //        pathsQuery = connection.createSubscribeQuery('paths');
 //
 //        pathsQuery.on('changed', (results) => {
@@ -66,7 +74,7 @@ class ShareDBFileManager extends EventEmitter {
 					return this.fileAtPath(path, child);
 				}
 			}
-			throw 'Invalid path';
+			return null;
 		}
 		return parent;
 	}
@@ -137,21 +145,14 @@ class ShareDBFileManager extends EventEmitter {
 			}
 			// update the view
 			if (rootFile.view) {
-				if (this.emptyRootFile.parentNode) {
-					rootFile.view.innerHTML = '';
-					for (var file of rootFile.children) {
-						rootFile.view.appendChild(this.view(file));
-					}
-				} else {
-					for (var file of files) {
-						var parent = file.parent, siblings = parent.children;
-						var children = (parent === rootFile ? parent.view : parent.view.lastChild);
-						var index = siblings.indexOf(file);
-						if (index < siblings.length - 1) {
-							children.insertBefore(this.view(file), siblings[index + 1].view);
-						} else {
-							children.appendChild(this.view(file));
-						}
+				for (var file of files) {
+					var parent = file.parent, siblings = parent.children;
+					var children = (parent === rootFile ? parent.view : parent.view.lastChild);
+					var index = siblings.indexOf(file);
+					if (index < siblings.length - 1) {
+						children.insertBefore(this.view(file), siblings[index + 1].view);
+					} else {
+						children.appendChild(this.view(file));
 					}
 				}
 			}
@@ -160,7 +161,7 @@ class ShareDBFileManager extends EventEmitter {
 	}
 
 	baseForNewFile(relative, base) {
-		if (!relative || relative === this) {
+		if (!relative || relative === this.rootFile) {
 			return base;
 		}
 		var doc = relative.doc;
@@ -225,12 +226,19 @@ class ShareDBFileManager extends EventEmitter {
 	view(file) {
 		if (!file) {
 			file = this.rootFile;
-			this.fileMap = {};
-			this.emptyRootFile = document.createElement('a');
-			this.emptyRootFile.className = 'disabled';
-			this.emptyRootFile.textContent = 'The project is empty.';
-			var view = document.createElement('div');
-			view.className = 'file';
+			var view = file.view;
+			if (!view) {
+				var view = document.createElement('div');
+				view.className = 'file';
+				view.dataset.fileId = 0;
+				file.view = view;
+				this.emptyRootFile = document.createElement('a');
+				this.emptyRootFile.className = 'disabled';
+				this.emptyRootFile.textContent = 'The project is empty.';
+			} else {
+				view.innerHTML = '';
+			}
+			this.fileMap = {0: file};
 			if (file.children && file.children.length > 0) {
 				for (var child of file.children) {
 					view.appendChild(this.view(child));
@@ -238,9 +246,6 @@ class ShareDBFileManager extends EventEmitter {
 			} else {
 				view.appendChild(this.emptyRootFile);
 			}
-			view.dataset.fileId = 0;
-			this.fileMap[0] = file;
-			file.view = view;
 			return view;
 		}
 		var view, a;
@@ -269,26 +274,26 @@ class ShareDBFileManager extends EventEmitter {
 		file.view = view;
 		return view;
 	}
-	
+
 	fileForView(view) {
 		while (!view.classList || !view.classList.contains('file')) {
 			if (view.parentNode) {
 				view = view.parentNode;
 			} else {
-				throw 'Invalid view.';
+				return null;
 			}
 		}
 		return this.fileMap[view.dataset.fileId];
 	}
-	
+
 	toggleDirectory(file, open, ancestors) {
-		if (!file || file === this.rootFile) {
-			return;
-		}
 		if (typeof(file) === 'string') {
 			file = this.fileAtPath(file);
 		}
-		var caret = file.view.firstChild.firstChild;
+		if (!file || file === this.rootFile) {
+			return;
+		}
+		var caret = file.view.firstChild.getElementsByClassName('fa')[0];
 		var children = file.view.lastChild;
 		if (open === undefined) {
 			open = !children.classList.contains('expanded');
@@ -310,13 +315,15 @@ class ShareDBFileManager extends EventEmitter {
 	}
 
 	_addTempFile(file, view, callback) {
-		if (!file) {
-			this.rootFile.appendChild(view);
-		} else if (file.children) {
+		if (file.children) {
 			this._viewIndent(view, file.level);
 			this.toggleDirectory(file, true, true);
-			var children = file.view.lastChild;
-			children.insertBefore(view, children.childNodes[0]);
+			if (file === this.rootFile) {
+				file.view.appendChild(view);
+			} else {
+				var children = file.view.lastChild;
+				children.insertBefore(view, children.childNodes[0]);
+			}
 		} else {
 			this._viewIndent(view, file.level - 1);
 			file.view.parentNode.insertBefore(view, file.view);

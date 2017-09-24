@@ -26,6 +26,7 @@ require('codemirror/mode/css/css');
 require('codemirror/mode/clike/clike');
 require('codemirror/mode/xml/xml');
 require('codemirror/mode/htmlmixed/htmlmixed');
+require('codemirror/mode/markdown/markdown');
 require('codemirror/keymap/sublime.js');
 require('codemirror/addon/display/panel');
 require('codemirror/addon/edit/matchbrackets');
@@ -74,6 +75,10 @@ function log(...args) {
 	}
 }
 
+function _error(...args) {
+	console.error(...args);
+}
+
 class Room extends EventEmitter {
 
 	constructor() {
@@ -99,7 +104,7 @@ class Room extends EventEmitter {
 			try {
 				message = CircularJSON.parse(event.data);
 			} catch (e) {
-				console.error('Error parsing JSON.', e.message, event.data);
+				_error('Error parsing JSON.', e.message, event.data);
 				return;
 			}
 			this._emit(...message);
@@ -159,12 +164,12 @@ class Room extends EventEmitter {
 		try {
 			json = CircularJSON.stringify(args);
 		} catch (e) {
-			console.error('Error creating JSON.', e.message);
+			_error('Error creating JSON.', e.message);
 			return;
 		}
 		this.ws.send(json, (error) => {
 			if (error) {
-				console.error(error);
+				_error(error);
 			}
 		});
 	}
@@ -341,7 +346,7 @@ class Sidebar {
 				fileManager.toggleDirectory(directory, true);
 			}
 		});
-		this.filesView.addEventListener('click', (event) => {
+		fileManager.rootFile.view.addEventListener('click', (event) => {
 			var file = fileManager.fileForView(event.target);
 			if (file.children) {
 				fileManager.toggleDirectory(file);
@@ -349,12 +354,12 @@ class Sidebar {
 				editor.open(file);
 			}
 		});
-		this.bindContextMenu('.file, #files', (target) => fileManager.fileForView(target), [
+		this.bindContextMenu('.file a, #files', (target) => (fileManager.fileForView(target) || fileManager.rootFile), [
 			['Preview', (file) => { preview.open(file.doc.data.path); }, (file) => { return {enable: file && !file.children}; }],
 			null,
 			['New File', (file) => { fileManager.createFileInteractive(file, (path, error) => {
 				if (error) {
-					console.error(error);
+					alert(error);
 				} else {
 					setTimeout(() => {
 						editor.open(path);
@@ -363,12 +368,12 @@ class Sidebar {
 			}); }],
 			['New Folder', (file) => { fileManager.createFolderInteractive(file, (path, error) => {
 				if (error) {
-					console.error(error);
+					alert(error);
 				}
 			}); }],
 			['Rename', (file) => { fileManager.moveFileInteractive(file, (error) => {
 				if (error) {
-					console.error(error);
+					alert(error);
 				}
 			}); }, (file) => { return {enable: file && !file.children}; }],
 			['Delete', (file) => {
@@ -377,7 +382,7 @@ class Sidebar {
 				}
 				fileManager.deleteFile(file, (error) => {
 					if (error) {
-						console.error(error);
+						alert(error);
 					}
 				});
 			}, (file) => { return {enable: file && (!file.children || file.children.length === 0)}; }]
@@ -427,11 +432,10 @@ class Sidebar {
 				return;
 			}
 			context = contextFn(target);
-			if (target !== fileManager.rootFile.view) {
+			if (target.tagName === 'A') {
 				target.classList.add('clicked');
 			}
-			$(menu).children().removeClass('disabled');
-			$(menu).children().filter((i, child) => {
+			var disable = (i, child) => {
 				var item = menuItems[i];
 				if (item === null || item.length < 3) {
 					return false;
@@ -439,10 +443,18 @@ class Sidebar {
 				var validate = item[2](context, child);
 				if (typeof(validate) === 'object') {
 					if (validate.hasOwnProperty('check')) {
-						var a = $(child).children('a');
-						a.children('span').remove();
+						var checkImage = child.getElementsByClassName('fa-check')[0];
 						if (validate.check) {
-							a.prepend('<span class="fa fa-check"></span>');
+							if (!checkImage) {
+								var a = child.getElementsByTagName('a')[0];
+								checkImage = document.createElement('span');
+								checkImage.className = 'fa fa-check';
+								a.insertBefore(checkImage, a.firstChild);
+							}
+						} else {
+							if (checkImage) {
+								checkImage.parentNode.removeChild(checkImage);
+							}
 						}
 					}
 					if (validate.hasOwnProperty('enable')) {
@@ -450,7 +462,11 @@ class Sidebar {
 					}
 				}
 				return validate;
-			}).addClass('disabled');
+			};
+			for (var i = 0; i < menuItems.length; i += 1) {
+				var child = menu.childNodes[i];
+				child.classList.toggle('disabled', disable(i, child));
+			}
 			menu.style.display = 'block';
 			menu.style.left = `${event.pageX}px`;
 			menu.style.top = `${event.pageY}px`;
@@ -676,7 +692,7 @@ class Editor {
 				if (!settings.values.touch) {
 					codeMirror.getInputField().focus();
 				}
-				var modes = {html: 'htmlmixed', js: 'javascript', json: 'application/json', css: 'css', php: 'application/x-httpd-php'};
+				var modes = {html: 'htmlmixed', js: 'javascript', json: 'application/json', css: 'css', php: 'application/x-httpd-php', md: 'text/x-markdown'};
 				codeMirror.setOption('mode', modes[Path.extname(path).substr(1)]);
 				codeMirror.setOption('lint', false);
 				codeMirror.setOption('lint', true);
@@ -704,7 +720,7 @@ class Editor {
 				this.showStatusbar(true);
 				this.shareDBCodeMirror.attachDoc(doc, (error) => {
 					if (error) {
-						console.error(error);
+						alert(error);
 						return;
 					}
 					finish();
@@ -1397,7 +1413,7 @@ class Outline {
 			var doc = fileManager.fileAtPath(outline).doc;
 			doc.fetch((error) => {
 				if (error) {
-					console.error(error);
+					alert(error);
 				}
 				this.entityMap = {};
 				this.nextEntityId = 1;
@@ -1445,7 +1461,7 @@ class Outline {
 		delete this.nextEntityId;
 		delete this.previewTree;
 	}
-	
+
 	selectRow(row) {
 		if (this.selectedRow) {
 			this.selectedRow.classList.remove('selected');
@@ -1453,7 +1469,7 @@ class Outline {
 		this.selectedRow = row;
 		row.classList.add('selected');
 	}
-	
+
 	updatePreviewTree(updates) {
 		this.previewTree.ingestUpdates(updates);
 	}
@@ -1911,7 +1927,7 @@ var fileManager, settings, room, editor, preview, jsConsole, search, bookmarks, 
 window.onload = (event) => {
 	fileManager = new ShareDBFileManager(connection, {verbose: debug});
 	fileManager.on('error', (error) => {
-		console.error(error);
+		_error(error);
 	});
 	document.addEventListener('focus', (event) => {
 		if (['input', 'textarea'].indexOf(event.target.tagName) !== -1) {

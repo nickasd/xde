@@ -331,8 +331,8 @@ html, body {
 }
 
 #search .file {
-	border: 1px solid #ccc;
-	border-width: 1px 0 1px 0;
+	border-top: 1px solid #ccc;
+	border-bottom: 1px solid #ccc;
 	color: #4F99E7;
 	cursor: default;
 	display: block;

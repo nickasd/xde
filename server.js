@@ -11,17 +11,18 @@ var walk = require('walk');
 var readline = require('readline');
 var os = require('os');
 var BrowserSync = require('browser-sync');
+var exec = require("child_process").exec;
 
 var ports = {sharedb: 8112, websocket: 3000, browsersync: 3001, app: 8080};
 
 class Room extends EventEmitter {
 
-	constructor(callback) {
+	constructor() {
 		super();
 		this._emit = this.emit;
 		this.emit = this.send;
-		var server = http.createServer();
-		this.wss = new WebSocket.Server({server});
+		this.server = http.createServer();
+		this.wss = new WebSocket.Server({server: this.server});
 		this.clients = [];
 		this.clientTypes = {};
 		this.clientsByName = {};
@@ -54,7 +55,7 @@ class Room extends EventEmitter {
 		this.on('init', (client, data) => {
 			var deviceType = data.deviceType;
 			if (!data.name || this.clientsByName[data.name]) {
-				var count = (this.clientTypes[deviceType] = (this.clientTypes[deviceType] || 1) + 1);
+				var count = (this.clientTypes[deviceType] = (this.clientTypes[deviceType] || 0) + 1);
 				data.name = (count === 1 ? deviceType : `${deviceType} ${count}`);
 			}
 			var name = data.name;
@@ -104,8 +105,11 @@ class Room extends EventEmitter {
 				}
 			}
 		});
-		server.listen(ports.websocket, () => {
-			console.log(`WebSocket: listening on port ${ports.websocket}`);
+	}
+
+	listen(port, callback) {
+		this.server.listen(port, () => {
+			console.log(`WebSocket: listening on port ${port}`);
 			callback();
 		});
 	}
@@ -143,7 +147,7 @@ class Room extends EventEmitter {
 
 class Project {
 
-	constructor(rootDir, callback) {
+	constructor(rootDir, port, callback) {
 		var sharedb = new ShareDB();
 
 		var connection = sharedb.connect();
@@ -170,9 +174,9 @@ class Project {
 			}
 			this.modifiedDocs = new Set();
 			sharedb.use('submit', (...args) => { this.onShareDBSubmit(...args); });
-			server.listen(ports.sharedb, () => {
-				console.log(`ShareDB: listening on port ${ports.sharedb}`);
+			server.listen(port, () => {
 				this.bindToClient(room);
+				console.log(`ShareDB: listening on port ${port}`);
 				callback();
 			});
 		});
@@ -209,28 +213,31 @@ class Project {
 	loadFromDisk(readFileContents, callback) {
 		this.documents = [];
 		walk.walk(this.rootDir, {}).on('node', (root, stat, next) => {
-			var absPath = Path.join(root, stat.name).replace(new RegExp(`\\${Path.sep}`, 'g'), Path.posix.sep);
-			var path = absPath.substr(this.rootDir.length + 1);
-			var type = stat.type, ext;
-			var document = {path};
+			var path = Path.join(root, stat.name).replace(new RegExp(`\\${Path.sep}`, 'g'), Path.posix.sep);
+			var base = Path.basename(path);
+			if (['.DS_Store', '.git'].indexOf(base) !== -1) {
+				next();
+			} else {
+			var type = stat.type, extension = Path.extname(path).substr(1);
+			var document = {path: path.substr(this.rootDir.length + 1)};
 			if (type === 'directory') {
 				document.type = type;
-			} else if (type === 'file' && (ext = Path.extname(path))) {
-				ext = ext.substr(1);
-				if (['html', 'js', 'json', 'css', 'php', 'txt', 'md'].indexOf(ext) !== -1) {
+			} else if (type === 'file') {
+				if (['html', 'js', 'json', 'css', 'php', 'txt', 'md'].indexOf(extension) !== -1) {
 					document.type = 'text';
 					if (readFileContents) {
-						var content = fs.readFileSync(absPath, 'utf8');
+						var content = fs.readFileSync(path, 'utf8');
 						document.content = content.replace(/\r\n/g, '\n');
 					} else {
 						document.content = '';
 					}
-				} else if (['jpg', 'png', 'gif', 'bmp', 'ico'].indexOf(ext) !== -1) {
+				} else if (['jpg', 'png', 'gif', 'bmp', 'ico'].indexOf(extension) !== -1) {
 					document.type = 'image';
 				}
 			}
 			this.documents.push(document);
 			next();
+			}
 		}).on('errors', (root, stats, next) => {
 			console.error();
 			next();
@@ -243,7 +250,7 @@ class Project {
 			}
 			var documentsToCreate = this.documents.length;
 			for (var i = 0; i < this.documents.length; i += 1) {
-				var id = `${i}`;
+				var id = `${i + 1}`;
 				var document = this.documents[i];
 				var path = document.path;
 				this.idsToPaths[id] = path;
@@ -487,20 +494,19 @@ class Project {
 
 class Preview {
 
-	constructor(callback) {
+	constructor() {
 		app.use('/preview', (...args) => { this.servePreview(...args); });
-		this.initBrowserSync(callback);
 	}
 
-	initBrowserSync(callback) {
+	initBrowserSync(port, callback) {
 		var bs = BrowserSync.create();
 		bs.watch(project.rootDir).on('change', (event) => {
 			event = event.replace(new RegExp(`\\${Path.sep}`, 'g'), Path.posix.sep);
 			event = event.substr(event.indexOf('/') + 1);
 			bs.reload(event);
 		});
-		bs.init({port: ports.browsersync, ui: false, logLevel: 'silent', notify: false}, () => {
-			console.log(`BrowserSync: listening on port ${ports.browsersync}`);
+		bs.init({port: port, ui: false, logLevel: 'silent', notify: false}, () => {
+			console.log(`BrowserSync: listening on port ${port}`);
 			callback();
 		});
 		this.bs = bs;
@@ -514,6 +520,14 @@ class Preview {
 			next(id);
 			return;
 		}
+		var extension = Path.extname(path).substr(1);
+		if (extension === 'php') {
+			exec(`php ${path}`, {cwd: project.rootDir}, (error, stdout, stderr) => {
+				console.log(error, stdout, stderr);
+				res.send(stdout);
+			});
+			return;
+		}
 		project.getDocument(id, (doc) => {
 			if (!doc) {
 				next();
@@ -522,7 +536,7 @@ class Preview {
 			var type = doc.data.type;
 			if (type === 'text') {
 				var content = doc.data.content;
-				if (Path.extname(path) === '.html') {
+				if (extension === 'html') {
 					var injectHead = `
 <script id="_xde_head-script">
 	window.addEventListener('message', (event) => {
@@ -582,13 +596,13 @@ class JSConsole {
 
 }
 
-function initApp(callback) {
+function initApp(port, callback) {
 	var app = express();
 	app.use(express.static('client'));
 	app.use(express.static('client/dist'));
 	app.use(express.static(__dirname + '/node_modules'));
-	app.listen(ports.app, () => {
-		console.log(`App: listening on port ${ports.app}`);
+	app.listen(port, () => {
+		console.log(`App: listening on port ${port}`);
 		callback();
 	});
 	return app;
@@ -635,11 +649,13 @@ if (process.argv.length != 3) {
 var projectDir = process.argv[2];
 
 var app, room, project, preview, jsConsole;
-app = initApp(() => {
-	room = new Room(() => {
-		project = new Project(projectDir, () => {
-			preview = new Preview(() => {
-				jsConsole = new JSConsole();
+app = initApp(ports.app, () => {
+	room = new Room();
+	project = new Project(projectDir, ports.sharedb, () => {
+		preview = new Preview();
+		preview.initBrowserSync(ports.browsersync, () => {
+			jsConsole = new JSConsole();
+			room.listen(ports.websocket, () => {
 				var addresses = [];
 				var netInterfaces = os.networkInterfaces();
 				for (var netInterface in netInterfaces) {
