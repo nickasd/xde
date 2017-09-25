@@ -647,6 +647,10 @@ if (process.argv.length != 3) {
 	process.exit();
 }
 var projectDir = process.argv[2];
+if (!fs.existsSync(projectDir)) {
+	console.error(`The path '${projectDir}' does not exist.\n`);
+	process.exit();
+}
 
 var app, room, project, preview, jsConsole;
 app = initApp(ports.app, () => {
