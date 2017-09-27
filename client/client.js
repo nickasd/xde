@@ -1908,7 +1908,7 @@ function activateView(view) {
 		if (oldContainer && oldContainer !== activeContainer) {
 			openView(oldView, oldContainer);
 		}
-		var activeObjects = (view.controller ? view.controller.activeObjects : {});
+		var activeObjects = view.controller.activeObjects;
 		topbar.setActiveObject(activeObjects.topbar);
 		sidebar.setActiveObject(activeObjects.sidebar);
 	}
@@ -1917,16 +1917,22 @@ function activateView(view) {
 
 var activeContainer;
 function setActiveContainer(event) {
-	var newActiveContainer;
+	var view;
 	if (document.activeElement === preview.view) {
-		newActiveContainer = preview.view.parentNode;
+		activeContainer = preview.view.parentNode;
+		view = preview.view;
 	} else if (event.target.closest) {
-		newActiveContainer = event.target.closest('#main, #left-component, #right-component, #top-component, #bottom-component');
+		var newActiveContainer = event.target.closest('#main, #left-component, #right-component, #top-component, #bottom-component');
+		if (newActiveContainer) {
+			activeContainer = newActiveContainer;
+			view = activeContainer.firstElementChild;
+			if (view == preview.view) {
+				view = activeContainer.lastElementChild;
+			}
+		}
 	}
-	if (newActiveContainer) {
-		activeContainer = newActiveContainer;
-		var view = activeContainer.firstChild;
-		var activeObjects = (view.controller ? view.controller.activeObjects : {});
+	if (view) {
+		var activeObjects = view.controller.activeObjects;
 		topbar.setActiveObject(activeObjects.topbar);
 		sidebar.setActiveObject(activeObjects.sidebar);
 	}
