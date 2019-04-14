@@ -6,13 +6,27 @@
 	<script src="jquery/dist/jquery.min.js"></script>
 	<script src="jquery-ui-dist/jquery-ui.min.js"></script>
 	<link rel="stylesheet" type="text/css" href="jquery-ui-dist/jquery-ui.min.css">
+	<link rel="stylesheet" type="text/css" href="codemirror/lib/codemirror.css">
+	<link rel="stylesheet" type="text/css" href="codemirror/theme/mdn-like.css">
+	<link rel="stylesheet" type="text/css" href="codemirror/addon/dialog/dialog.css">
+	<link rel="stylesheet" type="text/css" href="codemirror/addon/fold/foldgutter.css">
+	<link rel="stylesheet" type="text/css" href="codemirror/addon/hint/show-hint.css">
+	<link rel="stylesheet" type="text/css" href="codemirror/addon/lint/lint.css">
+	<link rel="stylesheet" type="text/css" href="codemirror/addon/scroll/simplescrollbars.css">
+	<link rel="stylesheet" type="text/css" href="codemirror/addon/search/matchesonscrollbar.css">
+	<link rel="stylesheet" type="text/css" href="codemirror/addon/tern/tern.css">
+	<link rel="stylesheet" type="text/css" href="bootstrap/dist/css/bootstrap.min.css">
+	<link rel="stylesheet" type="text/css" href="split-pane/split-pane.css">
+	<link rel="stylesheet" type="text/css" href="@fortawesome/fontawesome-free/css/all.css">
+	<link rel="stylesheet" type="text/css" href="javascript-console/javascript-console.css">
 	<script src="csslint/dist/csslint.js"></script>
 	<script src="jshint/dist/jshint.js"></script>
-	<script src="htmlhint/lib/htmlhint.js"></script>
+	<script src="htmlhint/dist/htmlhint.js"></script>
 	<script src="cssutilities/CSSUtilities.js"></script>
 	<script src="spectrum-colorpicker/spectrum.js"></script>
-	<link rel="stylesheet" href="spectrum-colorpicker/spectrum.css" />
-	<script src="dist/js/bundle.js"></script>
+	<link rel="stylesheet" type="text/css" href="spectrum-colorpicker/spectrum.css" />
+	<script src="index.js"></script>
+	<link rel="stylesheet" type="text/css" href="style.css" />
 	<title>XDE</title>
 </head>
 <body>
@@ -65,8 +79,8 @@
 					<a href="#" id="mode-search" class="btn btn-primary active">Search</a>
 					<a href="#" id="mode-replace" class="btn btn-primary">Replace</a>
 				</div>
-				<div class="input-group"><span class="input-group-addon"><span class="fa fa-search"></span></span><input id="search-input" type="search" class="form-control" placeholder="Search in project" /></div>
-				<div class="input-group"><span class="input-group-addon"><span class="fa fa-pencil"></span></span><input id="replace-input" type="search" class="form-control" placeholder="Replace in project" /></div>
+				<div class="input-group"><div class="input-group-prepend"><span class="input-group-text fa fa-search"></span></div><input id="search-input" type="search" class="form-control" placeholder="Search in project" /></div>
+				<div class="input-group"><div class="input-group-prepend"><span class="input-group-text fa fa-pencil-alt"></span></div><input id="replace-input" type="search" class="form-control" placeholder="Replace in project" /></div>
 			</div>
 		</div>
 		<div id="bookmarks">
@@ -78,9 +92,9 @@
 		</div>
 		<div id="settings">
 			<h2>Settings</h2>
-			<div class="input-group"><label for="name" class="input-group-addon">Name:</label><input type="text" class="form-control" id="name-setting" /></div>
-			<div id="split-setting" class="input-group"><span class="input-group-addon">Split:</span><span class="input-group-btn left"><button class="btn btn-primary active" data-split="no"><span class="fa fa-arrows"></span></button><button class="btn btn-primary" data-split="v"><span class="fa fa-arrows-h"></span></button><button class="btn btn-primary" data-split="h"><span class="fa fa-arrows-v"></span></button></span></div>
-			<div class="checkbox"><label><input id="fullscreen-setting" type="checkbox" value="">Fullscreen</label></div>
+			<div class="input-group"><div class="input-group-prepend"><label for="name" class="input-group-text">Name:</label></div><input type="text" class="form-control" id="name-setting" /></div>
+			<div id="split-setting" class="input-group"><div class="input-group-prepend"><span class="input-group-text">Split:</span></div><span class="input-group-btn left"><button class="btn btn-primary active" data-split="no"><span class="fa fa-arrows-alt"></span></button><button class="btn btn-primary" data-split="v"><span class="fa fa-arrows-alt-h"></span></button><button class="btn btn-primary" data-split="h"><span class="fa fa-arrows-alt-v"></span></button></span></div>
+			<div class="checkbox"><label><input id="fullscreen-setting" type="checkbox" value=""> Fullscreen</label></div>
 		</div>
 		<div id="help">
 			<h2>Help</h2>

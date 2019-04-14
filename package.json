@@ -4,54 +4,47 @@
 	"description": "A cross-device IDE that runs in the browser.",
 	"main": "server.js",
 	"scripts": {
-		"build": "cp -r node_modules/font-awesome/fonts client/dist && watchify client/client.js -o client/dist/js/bundle.js",
-		"test": "echo \"Error: no test specified\" && exit 1",
-		"start": "node server.js"
+		"start": "node server/index.js",
+		"dev": "nodemon --inspect=0.0.0.0 --watch server server/index.js",
+		"browserify": "gulp browserify",
+		"gulp": "gulp"
 	},
 	"author": "Nicolas Kick",
 	"license": "MIT",
 	"dependencies": {
-		"acorn": "^5.1.2",
-		"bootstrap": "^3.3.7",
-		"browser-sync": "^2.18.13",
-		"circular-json": "^0.3.3",
-		"codemirror": "^5.30.0",
+		"@fortawesome/fontawesome-free": "^5.8.1",
+		"acorn": "^6.1.1",
+		"bootstrap": "^4.3.1",
+		"browser-sync": "^2.26.3",
+		"circular-json": "^0.5.9",
+		"codemirror": "^5.45.0",
 		"css-parse": "^2.0.0",
 		"csslint": "^1.0.5",
 		"dom-inspector": "https://github.com/nickasd/dom-inspector",
 		"express": "^4.15.4",
-		"font-awesome": "^4.7.0",
-		"htmlhint": "^0.9.13",
+		"hotkeys-js": "^3.6.2",
+		"htmlhint": "^0.11.0",
 		"javascript-console": "git+https://github.com/nickasd/javascript-console.git",
-		"jquery": "^3.2.1",
+		"jquery": "^3.4.0",
 		"jquery-ui-dist": "^1.12.1",
-		"jshint": "^2.9.4",
-		"parse5": "^3.0.2",
-		"reconnecting-websocket": "^3.2.1",
-		"sharedb": "^1.0.0-beta.7",
-		"sharedb-codemirror": "https://github.com/nickasd/sharedb-codemirror",
-		"simple-hotkeys": "^1.0.3",
+		"jshint": "^2.10.2",
+		"parse5": "^5.1.0",
+		"reconnecting-websocket": "^4.1.10",
+		"sharedb": "^1.0.0-beta.22",
+		"sharedb-codemirror": "git+https://github.com/nickasd/sharedb-codemirror.git",
 		"spectrum-colorpicker": "^1.8.0",
 		"split-pane": "^0.5.1",
 		"stacktrace-js": "^2.0.0",
-		"tern": "^0.21.0",
+		"tern": "^0.23.0",
 		"uuid": "^3.0.1",
 		"walk": "^2.3.9",
 		"websocket-json-stream": "^0.0.3",
-		"ws": "^3.2.0"
+		"ws": "^6.2.1"
 	},
 	"devDependencies": {
-		"browserify": "^14.3.0",
-		"browserify-css": "^0.12.0",
+		"browserify": "^16.2.3",
+		"gulp": "^4.0.0",
+		"nodemon": "^1.18.11",
 		"watchify": "^3.9.0"
-	},
-	"browserify": {
-		"transform": [
-			"browserify-css"
-		]
-	},
-	"browserify-css": {
-		"minify": true,
-		"rebaseUrls": false
 	}
 }
