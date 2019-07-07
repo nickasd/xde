@@ -1,19 +1,19 @@
-var http = require('http');
-var express = require('express');
-var EventEmitter = require('events');
-var CircularJSON = require('circular-json');
-var WebSocket = require('ws');
-var WebSocketJSONStream = require('websocket-json-stream');
-var ShareDB = require('sharedb');
-var fs = require('fs');
-var Path = require('path');
-var walk = require('walk');
-var readline = require('readline');
-var os = require('os');
-var BrowserSync = require('browser-sync');
-var exec = require("child_process").exec;
+const http = require('http'),
+	express = require('express'),
+	EventEmitter = require('events'),
+	CircularJSON = require('circular-json'),
+	WebSocket = require('ws'),
+	WebSocketJSONStream = require('websocket-json-stream'),
+	ShareDB = require('sharedb'),
+	fs = require('fs'),
+	Path = require('path'),
+	walk = require('walk'),
+	readline = require('readline'),
+	os = require('os'),
+	BrowserSync = require('browser-sync'),
+	exec = require("child_process").exec;
 
-var ports = {sharedb: 8112, websocket: 3000, browsersync: 3001, app: 8080};
+const ports = {sharedb: 8112, websocket: 3000, browsersync: 3001, app: 8080};
 
 class Room extends EventEmitter {
 
@@ -36,8 +36,8 @@ class Room extends EventEmitter {
 					console.error('Error parsing JSON.', e.message, message);
 					return;
 				}
-				var event = message.shift();
-				for (var listener of this.listeners(event)) {
+				let event = message.shift();
+				for (let listener of this.listeners(event)) {
 					listener(ws, ...message);
 				}
 			});
@@ -45,7 +45,7 @@ class Room extends EventEmitter {
 				if (!ws.name) {
 					return;
 				}
-				var name = ws.name;
+				let name = ws.name;
 				delete this.clientsByName[name];
 				this.clients.splice(this.clients.map((client) => client.name).indexOf(name), 1);
 				this.broadcast(ws, 'clientDisconnected', name);
@@ -53,13 +53,13 @@ class Room extends EventEmitter {
 			});
 		});
 		this.on('init', (client, data) => {
-			var deviceType = data.deviceType;
+			let deviceType = data.deviceType;
 			if (!data.name || this.clientsByName[data.name]) {
-				var count = (this.clientTypes[deviceType] = (this.clientTypes[deviceType] || 0) + 1);
+				let count = (this.clientTypes[deviceType] = (this.clientTypes[deviceType] || 0) + 1);
 				data.name = (count === 1 ? deviceType : `${deviceType} ${count}`);
 			}
-			var name = data.name;
-			var color = this.colors[deviceType];
+			let name = data.name;
+			let color = this.colors[deviceType];
 			data.color = color;
 			this.emit(client, 'init', {name, color, clients: this.clients.filter((client) => !this.clientsByName[client.name].hidden), project: Path.basename(project.rootDir), history: project.history, console: jsConsole.history});
 			client.name = name;
@@ -121,7 +121,7 @@ class Room extends EventEmitter {
 		if (!client || client.hidden) {
 			return;
 		}
-		var json;
+		let json;
 		try {
 			json = CircularJSON.stringify(data);
 		} catch (e) {
@@ -136,7 +136,7 @@ class Room extends EventEmitter {
 	}
 
 	broadcast(emitter, ...data) {
-		for (var client of this.wss.clients) {
+		for (let client of this.wss.clients) {
 			if (client !== emitter && client.readyState === WebSocket.OPEN) {
 				this.emit(client, ...data);
 			}
@@ -148,14 +148,14 @@ class Room extends EventEmitter {
 class Project {
 
 	constructor(rootDir, port, callback) {
-		var sharedb = new ShareDB();
+		let sharedb = new ShareDB();
 
-		var connection = sharedb.connect();
+		let connection = sharedb.connect();
 		this.connection = connection;
 //      sharedb.addProjection('paths', 'files', {path: true});
 
 		this.rootDir = rootDir;
-		var readFileContents = true;
+		let readFileContents = true;
 		this.loadFromDisk(readFileContents, () => {
 //            new Tern.Server({defs: ternDefs, async: true, getFile: (file, callback) => {
 //                let doc = this.connection.get('files', file);
@@ -163,10 +163,10 @@ class Project {
 //                    callback(error, (error ? null : doc.data.content));
 //                });
 //            }});
-			var server = http.createServer();
-			var wss = new WebSocket.Server({server: server});
+			let server = http.createServer();
+			let wss = new WebSocket.Server({server: server});
 			wss.on('connection', (ws, req) => {
-				var stream = new WebSocketJSONStream(ws);
+				let stream = new WebSocketJSONStream(ws);
 				sharedb.listen(stream);
 			});
 			if (!readFileContents) {
@@ -185,7 +185,7 @@ class Project {
 	bindToClient(room) {
 		this.history = [];
 		room.on('history', (client, path) => {
-			var index = this.history.indexOf(path);
+			let index = this.history.indexOf(path);
 			if (index !== -1) {
 				this.history.splice(index, 1);
 			}
@@ -215,20 +215,20 @@ class Project {
 	loadFromDisk(readFileContents, callback) {
 		this.documents = [];
 		walk.walk(this.rootDir, {}).on('node', (root, stat, next) => {
-			var path = Path.join(root, stat.name).replace(new RegExp(`\\${Path.sep}`, 'g'), Path.posix.sep);
-			var base = Path.basename(path);
+			let path = Path.join(root, stat.name).replace(new RegExp(`\\${Path.sep}`, 'g'), Path.posix.sep);
+			let base = Path.basename(path);
 			if (['.DS_Store', '.git'].indexOf(base) !== -1) {
 				next();
 			} else {
-			var type = stat.type, extension = Path.extname(path).substr(1);
-			var document = {path: path.substr(this.rootDir.length + 1)};
+			let type = stat.type, extension = Path.extname(path).substr(1);
+			let document = {path: path.substr(this.rootDir.length + 1)};
 			if (type === 'directory') {
 				document.type = type;
 			} else if (type === 'file') {
 				if (['html', 'js', 'json', 'css', 'php', 'txt', 'md'].indexOf(extension) !== -1) {
 					document.type = 'text';
 					if (readFileContents) {
-						var content = fs.readFileSync(path, 'utf8');
+						let content = fs.readFileSync(path, 'utf8');
 						document.content = content.replace(/\r\n/g, '\n');
 					} else {
 						document.content = '';
@@ -250,11 +250,11 @@ class Project {
 				callback();
 				return;
 			}
-			var documentsToCreate = this.documents.length;
-			for (var i = 0; i < this.documents.length; i += 1) {
-				var id = `${i + 1}`;
-				var document = this.documents[i];
-				var path = document.path;
+			let documentsToCreate = this.documents.length;
+			for (let i = 0; i < this.documents.length; i += 1) {
+				let id = `${i + 1}`;
+				let document = this.documents[i];
+				let path = document.path;
 				this.idsToPaths[id] = path;
 				this.pathsToIds[path] = id;
 				this.connection.get('files', id).create(document, (error) => {
@@ -279,13 +279,13 @@ class Project {
 			return;
 		}
 		this.unsavedDocuments = this.modifiedDocs.size;
-		for (var modifiedDoc of this.modifiedDocs) {
+		for (let modifiedDoc of this.modifiedDocs) {
 			let doc = this.connection.get('files', modifiedDoc);
 			doc.fetch((error) => {
 				if (error) {
 					console.error(error);
 				} else {
-					var absPath = Path.join(this.rootDir, doc.data.path);
+					let absPath = Path.join(this.rootDir, doc.data.path);
 					fs.writeFileSync(absPath, doc.data.content, 'utf8');
 				}
 				this.unsavedDocuments -= 1;
@@ -298,7 +298,7 @@ class Project {
 
 	validatePath(path) {
 		path = Path.posix.normalize(path);
-		var absPath = Path.join(this.rootDir, path);
+		let absPath = Path.join(this.rootDir, path);
 		if (!absPath.startsWith(this.rootDir)) {
 			throw 'Illegal path.';
 		}
@@ -316,10 +316,10 @@ class Project {
 			if (doc.data.type !== 'text' || doc.data.content) {
 				callback(doc);
 			} else {
-				var absPath = Path.join(this.rootDir, doc.data.path);
+				let absPath = Path.join(this.rootDir, doc.data.path);
 				fs.readFile(absPath, 'utf8', (error, data) => {
-					var content = data.replace(/\r\n/g, '\n');
-					var op = [{p: ['content'], t: 'text0', o: [{p: 0, i: content}]}];
+					let content = data.replace(/\r\n/g, '\n');
+					let op = [{p: ['content'], t: 'text0', o: [{p: 0, i: content}]}];
 					doc.submitOp(op, (error) => {
 						doc.data.content = content;
 						callback(doc);
@@ -334,23 +334,23 @@ class Project {
 			callback();
 			return;
 		}
-		var id = request.data.d;
+		let id = request.data.d;
 		this.getDocument(id, (doc) => {
 			callback();
 		});
 	}
 
 	onShareDBSubmit(request, callback) {
-		var op = request.op;
-		var id = request.id;
+		let op = request.op;
+		let id = request.id;
 		if (op.create) {
-			var path = op.create.data.path;
+			let path = op.create.data.path;
 			path = this.validatePath(path);
 			if (this.pathsToIds[path]) {
 				throw `The file ${path} already exists.`;
 			}
-			var absPath = Path.join(this.rootDir, path);
-			var type = op.create.data.type;
+			let absPath = Path.join(this.rootDir, path);
+			let type = op.create.data.type;
 			if (type === 'text') {
 				fs.writeFileSync(absPath, op.create.data.content, 'utf8');
 			} else if (type === 'directory') {
@@ -360,8 +360,8 @@ class Project {
 			this.idsToPaths[id] = path;
 			this.pathsToIds[path] = id;
 		} else if (op.del) {
-			var path = this.idsToPaths[id];
-			var absPath = Path.join(this.rootDir, path);
+			let path = this.idsToPaths[id];
+			let absPath = Path.join(this.rootDir, path);
 			if (fs.statSync(absPath).isFile()) {
 				fs.unlinkSync(absPath);
 			} else {
@@ -370,14 +370,14 @@ class Project {
 			delete this.idsToPaths[id];
 			delete this.pathsToIds[path];
 		} else if (op.op) {
-			var p = op.op[0].p[0];
+			let p = op.op[0].p[0];
 			if (p === 'path') {
-				var newPath = op.op[0].o[1].i;
+				let newPath = op.op[0].o[1].i;
 				newPath = this.validatePath(newPath);
 				if (this.pathsToIds[newPath]) {
 					throw `The file ${newPath} already exists.`;
 				}
-				var oldPath = this.idsToPaths[id];
+				let oldPath = this.idsToPaths[id];
 				fs.renameSync(Path.join(this.rootDir, oldPath), Path.join(this.rootDir, newPath));
 				op.op[0].o[1].i = newPath;
 				this.idsToPaths[id] = newPath;
@@ -391,27 +391,27 @@ class Project {
 	}
 
 	search(search, callback) {
-		var results = [], matchCount = 0;
+		let results = [], matchCount = 0;
 		if (search.length === 0) {
 			callback({search, results, matchCount});
 			return;
 		}
 		search = search.toLowerCase();
-		var left = Object.keys(this.idsToPaths).length;
-		var regex = new RegExp(`^.*(${search}).*`, 'igm');
-		for (var id in this.idsToPaths) {
+		let left = Object.keys(this.idsToPaths).length;
+		let regex = new RegExp(`^.*(${search}).*`, 'igm');
+		for (let id in this.idsToPaths) {
 			let doc = this.connection.get('files', id);
 			doc.fetch((error) => {
-				var match, matches;
+				let match, matches;
 				if (error) {
 					console.error(error);
 				} else if (doc.data.content) {
 					matches = [];
 					while (match = regex.exec(doc.data.content)) {
-						var string = match[0];
-						var ch = string.toLowerCase().indexOf(search);
-						var index = match.index + ch;
-						var line = doc.data.content.substr(0, index).split('\n').length - 1;
+						let string = match[0];
+						let ch = string.toLowerCase().indexOf(search);
+						let index = match.index + ch;
+						let line = doc.data.content.substr(0, index).split('\n').length - 1;
 						matches.push({string, line, ch, index});
 						matchCount += 1;
 					}
@@ -419,10 +419,10 @@ class Project {
 						matches = null;
 					}
 				}
-				var path = doc.data.path;
-				var index = path.indexOf(search);
+				let path = doc.data.path;
+				let index = path.indexOf(search);
 				if (index !== -1 || matches) {
-					var result = {path};
+					let result = {path, version: doc.version};
 					if (index !== -1) {
 						result.index = index;
 					}
@@ -434,11 +434,11 @@ class Project {
 				left -= 1;
 				if (left === 0) {
 					results.sort((a, b) => a.path.localeCompare(b.path));
-					for (var i = 0; i < results.length; i += 1) {
-						matches = results[i].matches;
+					for (let i = 0; i < results.length; i += 1) {
+						let {version, matches} = results[i];
 						if (matches) {
-							for (var j = 0; j < matches.length; j += 1) {
-								matches[j].indexPath = `${i}/${j}`;
+							for (let j = 0; j < matches.length; j += 1) {
+								matches[j].indexPath = `${i}/${version}/${j}`;
 							}
 						}
 					}
@@ -453,42 +453,46 @@ class Project {
 			callback({search, replace});
 			return;
 		}
-		var left = 0;
+		let left = 0;
 		for (let path in matches) {
-			left += matches[path].length;
+			left += matches[path].matches.length;
 		}
-		var results = [];
+		let results = [];
 		for (let path in matches) {
-			let doc = this.connection.get('files', this.pathsToIds[path]);
-			doc.fetch((error) => {
-				matches[path].reverse();
-				for (let match of matches[path]) {
-					var {index, text} = match;
-					var submitCallback = (error) => {
-						var result = {indexPath: match.indexPath};
+			let fetchSnapshot = (i) => {
+				this.connection.fetchSnapshot('files', this.pathsToIds[path], matches[path].version, (error1, snapshot) => {
+					let doc = this.connection.get('files', this.pathsToIds[path]);
+					doc.ingestSnapshot(snapshot, (error) => {
+						error = error || error1;
+						let match = matches[path].matches[i];
+						let {index, text} = match;
+						let submitCallback = (error) => {
+							let result = {indexPath: match.indexPath};
+							if (error) {
+								console.error(error);
+								result.error = error;
+							}
+							results.push(result);
+							left -= 1;
+							doc.destroy(() => {
+								if (i < matches[path].matches.length - 1) {
+									fetchSnapshot(i + 1);
+								} else if (left === 0) {
+									callback({search, replace, results});
+								}
+							});
+						};
 						if (error) {
-							console.error(error);
-							result.error = error;
-						}
-						results.push(result);
-						left -= 1;
-						if (left === 0) {
-							callback({search, replace, results});
-						}
-					};
-					if (error) {
-						submitCallback(error);
-					} else {
-						var ops = [{p: index, d: text}, {p: index, i: replace}];
-						var op = [{p: ['content'], t: 'text0', o: ops}];
-						try {
+							submitCallback(error);
+						} else {
+							let ops = [{p: index, d: text}, {p: index, i: replace}];
+							let op = [{p: ['content'], t: 'text0', o: ops}];
 							doc.submitOp(op, submitCallback);
-						} catch (e) {
-							submitCallback(e.message);
 						}
-					}
-				}
-			});
+					});
+				});
+			};
+			fetchSnapshot(0);
 		}
 	}
 
@@ -501,7 +505,7 @@ class Preview {
 	}
 
 	initBrowserSync(port, callback) {
-		var bs = BrowserSync.create();
+		let bs = BrowserSync.create();
 		bs.watch(project.rootDir).on('change', (event) => {
 			event = event.replace(new RegExp(`\\${Path.sep}`, 'g'), Path.posix.sep);
 			event = event.substr(event.indexOf('/') + 1);
@@ -515,14 +519,14 @@ class Preview {
 	}
 
 	servePreview(req, res, next) {
-		var path = req._parsedOriginalUrl.pathname;
+		let path = req._parsedOriginalUrl.pathname;
 		path = path.substr(path.indexOf('/', 1) + 1);
-		var id = project.pathsToIds[path];
+		let id = project.pathsToIds[path];
 		if (!id) {
 			next(id);
 			return;
 		}
-		var extension = Path.extname(path).substr(1);
+		let extension = Path.extname(path).substr(1);
 		if (extension === 'php') {
 			exec(`php ${path}`, {cwd: project.rootDir}, (error, stdout, stderr) => {
 				console.log(error, stdout, stderr);
@@ -535,11 +539,11 @@ class Preview {
 				next();
 				return;
 			}
-			var type = doc.data.type;
+			let type = doc.data.type;
 			if (type === 'text') {
-				var content = doc.data.content;
+				let content = doc.data.content;
 				if (extension === 'html') {
-					var injectHead = `
+					let injectHead = `
 <script id="_xde_head-script">
 	window.addEventListener('message', (event) => {
 		if (event.origin === window.location.origin && event.data.eval) {
@@ -560,7 +564,7 @@ class Preview {
 	}
 </style>
 `;
-					var injectBody = `
+					let injectBody = `
 <script id="_xde_body-script">
 	document.write('<script id="_xde_browser-sync-script" async src="http://' + location.hostname + ':3001/browser-sync/browser-sync-client.js?v=2.18.12"><' + '/script>');
 </script>
@@ -599,7 +603,7 @@ class JSConsole {
 }
 
 function initApp(port, callback) {
-	var app = express();
+	let app = express();
 	app.use(express.static('dist'));
 	app.use(express.static('client'));
 	app.use(express.static('node_modules'));
@@ -611,7 +615,7 @@ function initApp(port, callback) {
 }
 
 function registerExitHandler() {
-	var rl = readline.createInterface({
+	let rl = readline.createInterface({
 		input: process.stdin,
 		output: process.stdout
 	});
@@ -648,13 +652,13 @@ if (process.argv.length != 3) {
 	console.log('Usage: path_to_project');
 	process.exit();
 }
-var projectDir = process.argv[2];
+let projectDir = process.argv[2];
 if (!fs.existsSync(projectDir)) {
 	console.error(`The path '${projectDir}' does not exist.\n`);
 	process.exit();
 }
 
-var app, room, project, preview, jsConsole;
+let app, room, project, preview, jsConsole;
 app = initApp(ports.app, () => {
 	room = new Room();
 	project = new Project(projectDir, ports.sharedb, () => {
@@ -662,10 +666,10 @@ app = initApp(ports.app, () => {
 		preview.initBrowserSync(ports.browsersync, () => {
 			jsConsole = new JSConsole();
 			room.listen(ports.websocket, () => {
-				var addresses = [];
-				var netInterfaces = os.networkInterfaces();
-				for (var netInterface in netInterfaces) {
-					for (var alias of netInterfaces[netInterface]) {
+				let addresses = [];
+				let netInterfaces = os.networkInterfaces();
+				for (let netInterface in netInterfaces) {
+					for (let alias of netInterfaces[netInterface]) {
 						if (alias.family === 'IPv4') {
 							addresses.push(`${alias.address}:${ports.app}`);
 						}

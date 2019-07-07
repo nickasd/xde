@@ -1148,8 +1148,9 @@ class Search {
 				}
 				newTarget.classList.add('selected');
 				this.selectedRow = newTarget;
-				var [file, match] = newTarget.dataset.indexPath.split('/');
+				var [file, version, match] = newTarget.dataset.indexPath.split('/');
 				file = this.results[file], match = file.matches[match];
+				console.log(this.results, file, match);
 				editor.open(file.path, {selection: match.index}, room.getClientNameByType(false));
 			}
 		});
@@ -1188,7 +1189,7 @@ class Search {
 			headerView.className = 'header';
 			headerView.textContent = `${(isReplace ? `Replace "${search}" with "${replace}"` : `Found "${search}"`)}: ${options.matchCount} matches in ${results.length} files`;
 			if (isReplace) {
-				var replaceAll = document.createElement('a');
+				var replaceAll = document.createElement('button');
 				replaceAll.id ='replace-all';
 				replaceAll.className = 'btn btn-primary right';
 				replaceAll.innerHTML = 'Replace all';
@@ -1198,12 +1199,12 @@ class Search {
 					for (var checkbox of Array.from(this.view.querySelectorAll('.line input:checked'))) {
 						var line = checkbox.parentNode;
 						var indexPath = line.dataset.indexPath;
-						var [file, match] = indexPath.split('/');
+						var [file, version, match] = indexPath.split('/');
 						file = this.results[file], match = file.matches[match];
 						if (!matches[file.path]) {
-							matches[file.path] = [];
+							matches[file.path] = {version: parseInt(version), matches: []};
 						}
-						matches[file.path].push({indexPath, index: match.index, text: match.string.substr(match.ch, search.length)});
+						matches[file.path].matches.push({indexPath, index: match.index, text: match.string.substr(match.ch, search.length)});
 					}
 					room.emit('replace', matches, search, replace);
 				});
