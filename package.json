@@ -21,7 +21,7 @@
 		"css-parse": "^2.0.0",
 		"csslint": "^1.0.5",
 		"dom-inspector": "https://github.com/nickasd/dom-inspector",
-		"express": "^4.17.1",
+		"express": "^4.17.3",
 		"hotkeys-js": "^3.6.11",
 		"htmlhint": "^0.11.0",
 		"javascript-console": "git+https://github.com/nickasd/javascript-console.git",
